@@ -9,8 +9,8 @@ on:
 name: build
 
 jobs:
-  build-operators:
-    name: build operator
+  build-operator:
+    name: build zonefile operator
     runs-on: ubuntu-latest
     permissions:
       packages: write
@@ -52,3 +52,25 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=ghcr.io/${{ github.repository }}:buildcache
           cache-to: type=registry,ref=ghcr.io/${{ github.repository }}:buildcache,mode=max
+
+  # On push/merge to main, attempt to create git tag matching the version specified in Cargo.toml
+  tag:
+    needs: [build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v2
+
+      - name: fetch version from Cargo.toml
+        id: retrieve_tag
+        run: echo "crate-tag=$(cat Cargo.toml | grep version | head -n1 | awk '{ print $3 }' | tr -d '"')" >> "$GITHUB_OUTPUT"
+        shell: bash
+
+      - name: create git tag from version
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tag_prefix: "v"
+          custom_tag: ${{ steps.retrieve_tag.outputs.crate-tag }}
