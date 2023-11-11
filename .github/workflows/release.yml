@@ -33,3 +33,17 @@ jobs:
       - uses: ncipollo/release-action@v1
         with:
           generateReleaseNotes: true
+
+  publish-crds:
+    name: publish crds
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: publish zonefile-crds
+        uses: katyo/publish-crates@v2
+        with:
+          registry-token: ${{ secrets.CARGO_LOGIN_TOKEN }}
+          args: --no-verify --package zonefile-crds
+          ignore-unpublished-changes: true
