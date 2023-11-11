@@ -65,7 +65,7 @@ jobs:
 
       - name: fetch version from Cargo.toml
         id: retrieve_tag
-        run: echo "crate-tag=$(cat Cargo.toml | grep version | head -n1 | awk '{ print $3 }' | tr -d '"')" >> "$GITHUB_OUTPUT"
+        run: echo "crate-tag=$(cat ./zonefile/Cargo.toml | grep version | head -n1 | awk '{ print $3 }' | tr -d '"')" >> "$GITHUB_OUTPUT"
         shell: bash
 
       - name: create git tag from version
