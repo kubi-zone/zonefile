@@ -29,3 +29,7 @@ jobs:
           docker pull "ghcr.io/kubi-zone/zonefile:$sha";
           docker tag  "ghcr.io/kubi-zone/zonefile:$sha" "ghcr.io/kubi-zone/zonefile:v$version";
           docker push "ghcr.io/kubi-zone/zonefile:v$version";
+      
+      - uses: ncipollo/release-action@v1
+        with:
+          generateReleaseNotes: true
