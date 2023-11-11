@@ -9,7 +9,7 @@ on:
 name: build
 
 jobs:
-  build-operator:
+  build:
     name: build zonefile operator
     runs-on: ubuntu-latest
     permissions:
