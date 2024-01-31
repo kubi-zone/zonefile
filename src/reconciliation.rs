@@ -1,5 +1,8 @@
 use futures::StreamExt;
-use kubizone_crds::v1alpha1::{Zone, ZoneEntry};
+use kubizone_crds::{
+    kubizone_common::FullyQualifiedDomainName,
+    v1alpha1::{Zone, ZoneEntry},
+};
 use zonefile_crds::{ZoneFile, TARGET_ZONEFILE_LABEL};
 
 use k8s_openapi::{api::core::v1::ConfigMap, serde_json::json};
@@ -18,16 +21,14 @@ struct Data {
 
 pub const CONTROLLER_NAME: &str = "kubi.zone/zonefile";
 
-fn build_zonefile(origin: &str, entries: &[ZoneEntry]) -> String {
+fn build_zonefile(origin: &FullyQualifiedDomainName, entries: &[ZoneEntry]) -> String {
     // We use the longest domain name in the list for
     // aligning the text in the output zonefile
     let longest_name_length = entries
         .iter()
-        .map(|entry| entry.fqdn.len())
+        .map(|entry| entry.fqdn.to_string().len())
         .max()
         .unwrap_or_default();
-
-    let origin_suffix = format!(".{origin}");
 
     let serialized_records = entries
         .iter()
@@ -40,10 +41,15 @@ fn build_zonefile(origin: &str, entries: &[ZoneEntry]) -> String {
                  rdata,
                  ..
              }| {
-                let fqdn = fqdn.strip_suffix(&origin_suffix).unwrap_or(fqdn);
+                let name = match fqdn.clone() - origin.clone() {
+                    Ok(partial) => partial.to_string(),
+                    Err(full) => full.to_string(),
+                };
+
+                let entry = if name.is_empty() { "@" } else { &name };
 
                 format!(
-                    "{fqdn:<width$} {ttl:<8} {class:<5} {type_:<6} {rdata}",
+                    "{entry:<width$} {ttl:<8} {class:<5} {type_:<6} {rdata}",
                     width = longest_name_length
                 )
             },
@@ -229,4 +235,46 @@ pub async fn reconcile(client: Client) {
         });
 
     zone_controller.await;
+}
+
+#[cfg(test)]
+mod tests {
+    use kubizone_common::{Class, FullyQualifiedDomainName, Type};
+    use kubizone_crds::v1alpha1::ZoneEntry;
+
+    use super::build_zonefile;
+
+    #[test]
+    fn zonefile_construction() {
+        let origin = FullyQualifiedDomainName::try_from("example.org.").unwrap();
+
+        let entries = vec![
+            ZoneEntry {
+                fqdn: FullyQualifiedDomainName::try_from("www.example.org.").unwrap(),
+                type_: Type::A,
+                class: Class::IN,
+                ttl: 360,
+                rdata: "127.0.0.1".to_string(),
+            },
+            ZoneEntry {
+                fqdn: FullyQualifiedDomainName::try_from("example.org.").unwrap(),
+                type_: Type::CNAME,
+                class: Class::IN,
+                ttl: 360,
+                rdata: "www.example.org.".to_string(),
+            },
+        ];
+
+        let zonefile = build_zonefile(&origin, &entries);
+
+        assert_eq!(
+            zonefile,
+            indoc::indoc! { r#"
+            $ORIGIN example.org.
+
+            www              360      IN A 127.0.0.1
+            @                360      IN CNAME www.example.org."#
+            }
+        );
+    }
 }

@@ -11,7 +11,8 @@ publish = false
 
 [dependencies]
 # Kubizone
-kubizone-crds = "0.2"
+kubizone-crds = "0.8.1"
+kubizone-common = "0.10.1"
 zonefile-crds = "0.2"
 
 # Logging
@@ -28,3 +29,6 @@ futures = "0.3"
 
 # CLI
 clap = { version = "4", features = ["derive"]}
+
+[dev-dependencies]
+indoc = "2"
