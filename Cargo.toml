@@ -3,7 +3,7 @@ name = "zonefile"
 description = "Zonefile Controller"
 keywords = ["kubernetes", "kubizone", "crd", "zonefile"]
 repository = "https://github.com/kubi-zone/zonefile"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 publish = false
 
