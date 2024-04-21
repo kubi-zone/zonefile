@@ -10,7 +10,7 @@ use kube::{
     api::{Patch, PatchParams},
     core::ObjectMeta,
     runtime::{controller::Action, watcher, Controller},
-    Api, Client, Resource, ResourceExt,
+    Api, Client, Resource as _, ResourceExt as _,
 };
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
 use tracing::log::*;
